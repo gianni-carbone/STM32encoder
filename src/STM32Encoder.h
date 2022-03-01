@@ -1,6 +1,12 @@
 #ifndef STM32Encoder_h
 #define STM32Encoder_h
 
+#include "Arduino.h"
+#include "stm32yyxx_hal_conf.h"
+#include <cfloat>					// for float and double boundaries
+#include "stdint.h"					// for integers boundaries	
+
+
 #define u8	uint8_t
 #define u16	uint16_t
 #define u32	uint32_t
@@ -8,19 +14,64 @@
 #define i16	int16_t
 #define i32	int32_t
 
+//#define ENC_DEBUG					// enable irqtime debug functions
+
 enum eTIMType {
 	TIM_MANAGED,
 	TIM_FREEWHEEL
 };
 
+enum _ebindType {
+	BIND_NONE,
+	BIND_INT8,
+	BIND_UINT8,
+	BIND_INT16,
+	BIND_UINT16,
+	BIND_INT32,
+	BIND_UINT32,
+	BIND_FLOAT,
+	BIND_DOUBLE
+};
 
-#include "Arduino.h"
-#include "stm32yyxx_hal_conf.h"
-#include <cfloat>					// for float and double boundaries
-#include "stdint.h"					// for integers boundaries	
 
-#define ENCT_VERSION	0x09
-//#define ENC_DEBUG					// enable irqtime debug functions
+typedef struct {
+	TIM_HandleTypeDef 	htim;
+	volatile u32 		oldmillis;
+	volatile i32 		pos;
+	volatile bool 		dir;
+	volatile i16 		speed = 0;
+	volatile bool 		isUpdated = false;
+
+	eTIMType 			mode;
+	bool				isStarted = false;
+
+	u16 				dynamic = 0;
+	u16 				stepLimit = 0;	
+	bool				dynamicPos = false;
+
+	_ebindType 			bindType = BIND_NONE;		// bind managementt
+	void* 				bind = NULL;
+	i16					intBindSteps = 1;			
+	float				floatBindSteps = 1.0;
+	double				doubleBindSteps = 1.0;
+
+	i32					intMin = 0;					
+	i32					intMax = 0;
+	u32					uintMin = 0;
+	u32					uintMax = 0;
+	float				floatMin = 0;
+	float				floatMax = 0;
+	double				doubleMin = 0;
+	double				doubleMax = 0;
+	bool				circular	= false;
+	void 				(*linked)(void) = NULL;	// attach management
+#ifdef ENC_DEBUG
+	volatile 			u32 irqtime =0;
+#endif
+} STM32statusType;
+
+
+#define ENCT_VERSION	902
 
 class STM32Encoder {
 	
@@ -28,6 +79,7 @@ class STM32Encoder {
 	STM32Encoder(TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = 3);
 	STM32Encoder(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = UINT16_MAX);
 	//~STM32Encoder();  // destructor
+	u32     version();
 	bool	isStarted(void);								// return is started. If false then error occurs during inizialization
 	bool	isUpdated(void);								// return a tick is done since last call. Function call resets the flag
 	i32		pos(void);										// get the current absolute position 
@@ -59,6 +111,7 @@ class STM32Encoder {
 #endif
 
 	private:
+	STM32statusType st;
 	bool	init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks);
 };
 #endif
