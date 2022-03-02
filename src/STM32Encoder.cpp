@@ -1,4 +1,4 @@
-#include "STM32Encoder.h"
+#include "STM32encoder.h"
 
 #define TRIM_INT8(v)			v=(v<INT8_MIN)?INT8_MIN:(v>INT8_MAX)?INT8_MAX:v
 #define TRIM_INT16(v)			v=(v<INT16_MIN)?INT16_MIN:(v>INT16_MAX)?INT16_MAX:v
@@ -103,15 +103,15 @@ void _timerIrq(STM32statusType* st){
 }
 
 
-STM32Encoder::STM32Encoder(TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks){
+STM32encoder::STM32encoder(TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks){
 	st.isStarted = init(TIM_MANAGED, Instance, _ICxFilter, _pulseTicks);
 }  
 
-STM32Encoder::STM32Encoder(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks){
+STM32encoder::STM32encoder(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks){
 	st.isStarted = init(_timMode, Instance, _ICxFilter, _pulseTicks);
 }
 
-bool	STM32Encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks) {
+bool	STM32encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks) {
 	if (!IS_TIM_IC_FILTER(_ICxFilter)) _ICxFilter = 0x00;							// check filter is valid
 
 	TIM_Encoder_InitTypeDef sConfig = {0};
@@ -216,21 +216,21 @@ bool	STM32Encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter,
 
 
 // main functions
-u32	STM32Encoder::version(void) {
+u32	STM32encoder::version(void) {
 	return  ENCT_VERSION;
 }
 
-bool	STM32Encoder::isStarted(void) {
+bool	STM32encoder::isStarted(void) {
 	return  st.isStarted;
 }
 
-bool	STM32Encoder::isUpdated(void) {
+bool	STM32encoder::isUpdated(void) {
 	bool _u=st.isUpdated; 
 	st.isUpdated = false; 
 	return  _u;
 }
 
-i32 	STM32Encoder::pos(void) {
+i32 	STM32encoder::pos(void) {
 	if (st.mode == TIM_MANAGED) {
 		return  st.pos;
 	} else if (st.mode == TIM_FREEWHEEL) {
@@ -238,7 +238,7 @@ i32 	STM32Encoder::pos(void) {
 	} else return 0;
 }
 
-void 	STM32Encoder::pos(i32 _p) {
+void 	STM32encoder::pos(i32 _p) {
 	if (st.mode == TIM_MANAGED) {
 		st.pos = _p;
 	} else if (st.mode == TIM_FREEWHEEL) {
@@ -250,7 +250,7 @@ void 	STM32Encoder::pos(i32 _p) {
 	} 
 }
 
-bool 	STM32Encoder::dir() {
+bool 	STM32encoder::dir() {
 	if (st.mode == TIM_MANAGED) {
 		return !st.dir;
 	} else if (st.mode == TIM_FREEWHEEL) {
@@ -258,9 +258,9 @@ bool 	STM32Encoder::dir() {
 	} else return true;
 }
 
-i16 	STM32Encoder::speed(void) {return  st.speed;}
+i16 	STM32encoder::speed(void) {return  st.speed;}
 
-void 	STM32Encoder::dynamic(u16 _s, u16 _l, bool _dp) {
+void 	STM32encoder::dynamic(u16 _s, u16 _l, bool _dp) {
 	st.dynamic = _s; 
 	if (_l<1) {
 		st.stepLimit = 1;
@@ -271,14 +271,14 @@ void 	STM32Encoder::dynamic(u16 _s, u16 _l, bool _dp) {
 	st.dynamicPos = _dp;
 }
 
-u16 	STM32Encoder::dynamic() {return st.dynamic;}
+u16 	STM32encoder::dynamic() {return st.dynamic;}
 
-void 	STM32Encoder::circular(bool _c) {
+void 	STM32encoder::circular(bool _c) {
 	if (st.mode != TIM_MANAGED) return; 
 	st.circular = _c;
 }
 
-bool 	STM32Encoder::circular(void) {
+bool 	STM32encoder::circular(void) {
 	if (st.mode == TIM_MANAGED) {
 		return st.circular;
 	} else if (st.mode == TIM_FREEWHEEL) {
@@ -286,19 +286,19 @@ bool 	STM32Encoder::circular(void) {
 	} else return true;
 }
 
-void 	STM32Encoder::attach(void (*_f)(void)) {
+void 	STM32encoder::attach(void (*_f)(void)) {
 	if (st.mode != TIM_MANAGED) return; 
 	st.linked = _f;
 }
 
-void 	STM32Encoder::detach(void) {st.linked = NULL;}
+void 	STM32encoder::detach(void) {st.linked = NULL;}
 	
-void STM32Encoder::unbind() {	
+void STM32encoder::unbind() {	
 	st.bindType = BIND_NONE;
 	st.bind = NULL;
 }
 
-void STM32Encoder::bind(i8* _p, i16 _s, i8 _min, i8 _max) {
+void STM32encoder::bind(i8* _p, i16 _s, i8 _min, i8 _max) {
 	if (st.mode != TIM_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_INT8;
@@ -309,7 +309,7 @@ void STM32Encoder::bind(i8* _p, i16 _s, i8 _min, i8 _max) {
 	}
 }
 
-void STM32Encoder::bind(u8* _p, i16 _s, u8 _min, u8 _max) {
+void STM32encoder::bind(u8* _p, i16 _s, u8 _min, u8 _max) {
 	if (st.mode != TIM_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_UINT8;
@@ -320,7 +320,7 @@ void STM32Encoder::bind(u8* _p, i16 _s, u8 _min, u8 _max) {
 	}
 }
 
-void STM32Encoder::bind(i16* _p, i16 _s, i16 _min, i16 _max) {
+void STM32encoder::bind(i16* _p, i16 _s, i16 _min, i16 _max) {
 	if (st.mode != TIM_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_INT16;
@@ -331,7 +331,7 @@ void STM32Encoder::bind(i16* _p, i16 _s, i16 _min, i16 _max) {
 	}
 }
 
-void STM32Encoder::bind(u16* _p, i16 _s, u16 _min, u16 _max) {
+void STM32encoder::bind(u16* _p, i16 _s, u16 _min, u16 _max) {
 	if (st.mode != TIM_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_UINT16;
@@ -342,7 +342,7 @@ void STM32Encoder::bind(u16* _p, i16 _s, u16 _min, u16 _max) {
 	}
 }
 
-void STM32Encoder::bind(i32* _p, i16 _s, i32 _min, i32 _max) {
+void STM32encoder::bind(i32* _p, i16 _s, i32 _min, i32 _max) {
 	if (st.mode != TIM_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_INT32;
@@ -353,7 +353,7 @@ void STM32Encoder::bind(i32* _p, i16 _s, i32 _min, i32 _max) {
 	}
 }
 
-void STM32Encoder::bind(u32* _p, i16 _s, u32 _min, u32 _max) {
+void STM32encoder::bind(u32* _p, i16 _s, u32 _min, u32 _max) {
 	if (st.mode != TIM_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_UINT32;
@@ -364,7 +364,7 @@ void STM32Encoder::bind(u32* _p, i16 _s, u32 _min, u32 _max) {
 	}
 }
 
-void STM32Encoder::bind(float_t* _p, float _s, float _min, float _max) {
+void STM32encoder::bind(float_t* _p, float _s, float _min, float _max) {
 	if (st.mode != TIM_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_FLOAT;
@@ -375,7 +375,7 @@ void STM32Encoder::bind(float_t* _p, float _s, float _min, float _max) {
 	}
 }
 
-void STM32Encoder::bind(double_t* _p, double _s, double _min, double _max) {
+void STM32encoder::bind(double_t* _p, double _s, double _min, double _max) {
 	if (st.mode != TIM_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_DOUBLE;
@@ -387,5 +387,5 @@ void STM32Encoder::bind(double_t* _p, double _s, double _min, double _max) {
 }
 
 #ifdef ENC_DEBUG
-u32 	STM32Encoder::irqtime(void) {return  st.irqtime;}
+u32 	STM32encoder::irqtime(void) {return  st.irqtime;}
 #endif

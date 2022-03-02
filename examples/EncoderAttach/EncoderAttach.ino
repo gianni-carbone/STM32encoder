@@ -1,6 +1,6 @@
-#include "STM32Encoder.h"
+#include "STM32encoder.h"
 
-STM32Encoder enc(TIM2);		// create a managed encoder by TIM2. You have to use TIM input pin to connect encoder to. 
+STM32encoder enc(TIM2);		// create a managed encoder by TIM2. You have to use TIM input pin to connect encoder to. 
                           // i.e. for STM32F103 TIM2 has PA0 and PA1 inputs. See device documentation for other TIMs input pins
 
 bool led_status = false;

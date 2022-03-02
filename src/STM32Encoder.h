@@ -1,5 +1,5 @@
-#ifndef STM32Encoder_h
-#define STM32Encoder_h
+#ifndef STM32encoder_h
+#define STM32encoder_h
 
 #include "Arduino.h"
 #include "stm32yyxx_hal_conf.h"
@@ -71,14 +71,14 @@ typedef struct {
 } STM32statusType;
 
 
-#define ENCT_VERSION	902
+#define ENCT_VERSION	903
 
-class STM32Encoder {
+class STM32encoder {
 	
 	public:
-	STM32Encoder(TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = 3);
-	STM32Encoder(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = UINT16_MAX);
-	//~STM32Encoder();  // destructor
+	STM32encoder(TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = 3);
+	STM32encoder(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = UINT16_MAX);
+	//~STM32encoder();  // destructor
 	u32     version();
 	bool	isStarted(void);								// return is started. If false then error occurs during inizialization
 	bool	isUpdated(void);								// return a tick is done since last call. Function call resets the flag

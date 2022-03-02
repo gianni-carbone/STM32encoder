@@ -1,6 +1,6 @@
-#include "STM32Encoder.h"
+#include "STM32encoder.h"
 
-STM32Encoder enc(TIM_FREEWHEEL, TIM2);						// create an umanaged encoder by TIM2 in freewheel mode (no interrupt managed). 
+STM32encoder enc(TIM_FREEWHEEL, TIM2);						// create an umanaged encoder by TIM2 in freewheel mode (no interrupt managed). 
                                                   // in freewheel mode the timer just decode the encoder outputs, and update tim value according it. No further action is done.
                                                   // in this mode you can just read position (0..65535 circular) and direction. WARN: the position is inc/dec by encoder typical pulse per tick (normally 4)
                                                   // for this reason you have to divide position by pulse per tick to have the tick count
