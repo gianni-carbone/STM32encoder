@@ -1,4 +1,4 @@
-# STM32Encoder
+# STM32encoder
 Arduino library to manage quadrature encoder for STM32 architecture
 
 This Arduino library simplifies the use of rotary encoders. It works with stm32 platforms.
