@@ -48,7 +48,7 @@ enum btnEvent {
 	TIM_BTN_EVT_LONG
 };
 
-#define BTN_PRESS_TIME		5 	// millisecond debounce time
+#define BTN_PRESS_TIME		2 	// millisecond debounce time
 #define BTN_LONG_TIME		750 // millisecond for long press
 
 typedef struct {
@@ -90,8 +90,8 @@ typedef struct {
 	
 	volatile u32 	btnPressMs = 0;
 	volatile u32	btnDepressMs = 0;
-	eTIMBtnFSM		btnFSM = TIM_BTN_FSM_RESET;
-	btnEvent		btnEvt = TIM_BTN_EVT_NONE;
+	volatile eTIMBtnFSM		btnFSM = TIM_BTN_FSM_RESET;
+	volatile btnEvent		btnEvt = TIM_BTN_EVT_NONE;
 
 #ifdef ENC_DEBUG
 	volatile 			u32 irqtime =0;
