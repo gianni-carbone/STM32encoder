@@ -5,7 +5,7 @@
 #include "stm32yyxx_hal_conf.h"
 #include <cfloat>					// for float and double boundaries
 #include "stdint.h"					// for integers boundaries	
-
+#include <stdarg.h>					// for variadic function
 
 #define u8	uint8_t
 #define u16	uint16_t
@@ -33,8 +33,9 @@ enum _ebindType {
 	BIND_DOUBLE
 };
 
-enum eTIMBtnFun {
-	TIM_BTNPOLL
+enum btnFunc_t {
+	TIM_BTNPOLL,
+	TIM_BTNSCALE
 };
 
 enum eTIMBtnFSM {
@@ -42,7 +43,7 @@ enum eTIMBtnFSM {
 	TIM_BTN_FSM_PRESS1
 };
 
-enum btnEvent {
+enum _btnEvent {
 	TIM_BTN_EVT_NONE,
 	TIM_BTN_EVT_CLICK,
 	TIM_BTN_EVT_LONG
@@ -69,9 +70,11 @@ typedef struct {
 
 	_ebindType 		bindType = BIND_NONE;		// bind managementt
 	void* 			bind = NULL;
-	i16				intBindSteps = 1;			
-	float			floatBindSteps = 1.0;
-	double			doubleBindSteps = 1.0;
+	i16				intBindSteps[5] 	= {1, 1, 1, 1, 1};			
+	float			floatBindSteps[5] 	= {1.0, 1.0, 1.0, 1.0, 1.0};
+	double			doubleBindSteps[5] 	= {1.0, 1.0, 1.0, 1.0, 1.0};
+	u8				scaleSize = 1;
+	u8				currentScale = 0;
 
 	i32				intMin = 0;					
 	i32				intMax = 0;
@@ -87,11 +90,12 @@ typedef struct {
 	u32				buttonPin = 0;
 	GPIO_TypeDef*	buttonPort = {0};
 	u16				buttonGpioPin = 0;
+	btnFunc_t 		buttonFunction = TIM_BTNPOLL;
 	
-	volatile u32 	btnPressMs = 0;
-	volatile u32	btnDepressMs = 0;
+	volatile u32 	pressTime = 0;
+	volatile u32	depresTime = 0;
 	volatile eTIMBtnFSM		btnFSM = TIM_BTN_FSM_RESET;
-	volatile btnEvent		btnEvt = TIM_BTN_EVT_NONE;
+	volatile _btnEvent		btnEvt = TIM_BTN_EVT_NONE;
 
 #ifdef ENC_DEBUG
 	volatile 			u32 irqtime =0;
@@ -109,24 +113,34 @@ class STM32encoder {
 	//~STM32encoder();  // destructor
 	u32     	version();
 	
-	bool 		setbutton(u32 _p);								// set button pin
-	btnEvent 	button(void);									// returns button last state and reset flag
+	bool 		setButton(u32 _p, btnFunc_t _f = TIM_BTNPOLL
+		, float _v0 =0.0
+		, float _v1 =0.0
+		, float _v2 =0.0
+		, float _v3 =0.0
+		, float _v4 =0.0
+	);																// set button pin, function and arguments
+	_btnEvent 	button(void);										// returns button last state and reset flag
 	
-	bool		isStarted(void);								// return is started. If false then error occurs during inizialization
-	bool		isUpdated(void);								// return a tick is done since last call. Function call resets the flag
-	i32			pos(void);										// get the current absolute position 
-	void 		pos(i32 _p);									// set the absolute position to the given value
-	bool		dir(void);										// get the (last) direction of rotation		
-	i16 		speed(void);									// get the (last) speed of revolution as ticks per second
-	void 		circular(bool _c);								// set circular mode
-	bool 		circular(void);									// get the circular mode
+	u8			scaleId(void);										// returns current scale id
+	void 		scaleId(u8 _s);										// sets the current scale id
+	u8			scaleSize(void);									// returns current scale size
 	
-	void 		dynamic(u16 _s, u16 _l = 0, bool _dp = true);	// set the speed factor [step limit and dynamic pos]. Speed factor affects increment rate [and position counter] as (_speed*_dynamic)/100 [with limit]. Dynamic(0) = disable the feature
-	u16 		dynamic(void);									// get the speed factor
-	u16 		speedLimit();									// get the speed limit	
+	bool		isStarted(void);									// return is started. If false then error occurs during inizialization
+	bool		isUpdated(void);									// return a tick is done since last call. Function call resets the flag
+	i32			pos(void);											// get the current absolute position 
+	void 		pos(i32 _p);										// set the absolute position to the given value
+	bool		dir(void);											// get the (last) direction of rotation		
+	i16 		speed(void);										// get the (last) speed of revolution as ticks per second
+	void 		circular(bool _c);									// set circular mode
+	bool 		circular(void);										// get the circular mode
+	
+	void 		dynamic(u16 _s, u16 _l = 0, bool _dp = true);		// set the speed factor [step limit and dynamic pos]. Speed factor affects increment rate [and position counter] as (_speed*_dynamic)/100 [with limit]. Dynamic(0) = disable the feature
+	u16 		dynamic(void);										// get the speed factor
+	u16 		speedLimit();										// get the speed limit	
 
-	void 		attach(void (*_f)(void));						// attach the given function to the isr (The function will be executed at the end of interrupt routine)
-	void 		detach(void);									// detach the function
+	void 		attach(void (*_f)(void));							// attach the given function to the isr (The function will be executed at the end of interrupt routine)
+	void 		detach(void);										// detach the function
 	
 	void 		bind(i8* _p, i16 _s = 1, i8 _min = INT8_MIN, i8 _max = INT8_MAX);			// binds the given variable to the isr (variable management). The variable will be incremented or decremented in the isr routine by _s steps per tick. Affected by dynamic.
 	void 		bind(u8* _p, i16 _s = 1, u8 _min = 0, u8 _max = UINT8_MAX);
