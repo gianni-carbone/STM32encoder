@@ -102,6 +102,39 @@ void _timerIrq(STM32statusType* st){
 	st->isUpdated = true;
 }
 
+void _buttonIrq(STM32statusType* st){ 
+	if (st->buttonPin == 0) return;
+	
+	u32  _newmillis = millis();
+	
+	if (!((st->buttonPort->IDR) & (st->buttonGpioPin))) {								// pressed. direct read IDR of buttonPort
+		
+		switch(st->btnFSM){
+			case TIM_BTN_FSM_RESET: 				
+				st->btnFSM = TIM_BTN_FSM_PRESS1;
+			break;
+		}
+		st->btnPressMs = _newmillis;
+	
+	} else {																			// depressed
+		
+		switch(st->btnFSM){
+			case TIM_BTN_FSM_PRESS1:										
+				if ((_newmillis - st->btnPressMs) > BTN_LONG_TIME) {
+					st->btnFSM = TIM_BTN_FSM_RESET;
+					st->btnEvt = TIM_BTN_EVT_LONG;
+				} else if ((_newmillis - st->btnPressMs) > BTN_PRESS_TIME) {
+					st->btnFSM = TIM_BTN_FSM_PRESS1;
+					st->btnEvt = TIM_BTN_EVT_CLICK;
+				} else {
+					st->btnFSM = TIM_BTN_FSM_RESET;
+				}
+			break;
+		}
+		st->btnDepressMs = _newmillis;
+	}
+}
+	
 
 STM32encoder::STM32encoder(TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks){
 	st.isStarted = init(TIM_MANAGED, Instance, _ICxFilter, _pulseTicks);
@@ -216,6 +249,34 @@ bool	STM32encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter,
 
 
 // main functions
+
+bool STM32encoder::setbutton(u32 _p) {
+	if (!_p) return false;
+	
+	if (st.buttonPin) detachInterrupt(st.buttonPin);
+	st.buttonPin = _p;
+	pinMode(st.buttonPin, INPUT_PULLUP);
+	
+	PinName pn = digitalPinToPinName(st.buttonPin);
+	st.buttonPort = get_GPIO_Port(STM_PORT(pn));
+	st.buttonGpioPin = STM_GPIO_PIN(pn);
+	attachInterrupt(st.buttonPin, std::bind(_buttonIrq, &st), CHANGE);
+	
+	return true;
+}
+
+btnEvent STM32encoder::button(void){
+	btnEvent e = st.btnEvt;
+	if (e != TIM_BTN_EVT_NONE) {
+		st.btnFSM = TIM_BTN_FSM_RESET;
+		st.btnEvt = TIM_BTN_EVT_NONE;
+		st.btnPressMs = 0;
+		st.btnDepressMs = 0;
+	}
+	return e;
+}
+
+
 u32	STM32encoder::version(void) {
 	return  ENCT_VERSION;
 }
