@@ -1,15 +1,15 @@
 # STM32encoder
-Arduino library to manage quadrature encoder for STM32 architecture
+Arduino library to manage quadrature encoder for STM32 architecture. 
 
 This Arduino library simplifies the use of rotary encoders. It works with stm32 platforms.
 
 With a few lines of code it is possible to instantiate an encoder object by managing its properties and events. It is possible to link numeric variables to the encoder so that they are automatically increased and decreased. It is also possible to attach interrupt routines to be executed at each hardware device tick. The library also manages the rotation dynamics, calculating the rotation speed and possibly correcting the rate of increase and decrease based on it.
 
-The library uses the "encoder mode" features of the advanced timers present in the STM32 mcu. Each instantiated object uses (consumes) a timer.
+The library uses the "encoder mode" features of the advanced timers present in the STM32 mcu. Each instantiated object uses (consumes) a timer. In general, each STM32 mcu has several timers available that offer the encoder mode, so it is possible to use multiple encoders connected to a single mcu. The maximum number of encoders depends on the mcu model.
 
-In general, each STM32 mcu has several timers available that offer the encoder mode, so it is possible to use multiple encoders connected to a single mcu. The maximum number of encoders depends on the mcu model.
+The encoder object can be instantiated in "managed" or "freewheel" mode. In the first mode it is possible to exploit all the potential of the library. The second mode, while facilitating the use of the encoder, leaves the user to manage the higher level functions. By default, object instantiation is in "managed" mode. There is also a small set of functions for managing the button. Currently the library debounces the button and detects click and long click events.
 
-The encoder object can be instantiated in "managed" or "freewheel" mode. In the first mode it is possible to exploit all the potential of the library. The second mode, while facilitating the use of the encoder, leaves the user to manage the higher level functions. By default, object instantiation is in "managed" mode
+Please take a look at the examples to get a better understanding of how it works.
 
 # Usage
 Available main methods in "managed" mode:
@@ -39,3 +39,5 @@ Available methods in "freewheel" mode:
 - attach(f)                           where f is the user function pointer (void fun(void)). The function f will be called at every encodet tick. 
 - dynamic(r,[l],[c])                  sets the dynamic increment behavior of the linked variable and / or the counter. Where r (uint16) is the multiplication rate with respect to the speed, l (uint16) is the maximum increase limit of the variable and c (bool) applies the dynamic behavior to the counter as well. Once the dynamics have been set, the linked variable will increase / decrease with a rate that depends on the incRate set with the "bind" function and on the rotation speed according to the constant r specified in this function. The increment function is as follows: steps = ((speed * r) / 100). The increment value of the linked variable will be steps * incRate, the counter is incremented exactly equal to steps (in case c = true) otherwise its increment value will always be equal to 1 per tick
 - circular(m)                         m (bool) sets the circular increment behavior of the linked variable. When m = true, the linked variable behave in circular mode. When m = true, the linked variable behaves in a circular way, that is, once it reaches an extreme fixed in the "bind" function, continuing to rotate the encoder, it will return to the other extreme. eg, assuming an integer bind with fixed extremes between 0 and 10, by rotating it towards the encoder, the variable will follow the following increment scheme 0,1,2 ..., 10,0, .... in case m = false, while continuing to rotate the encoder, the variable would have remained at 10. Warn: the counter is always circular, regardless of m
+- setbutton(p)                        attach encoder button to pin p (pin)
+- button()                            read the button event (btnEvent) and resets button state
