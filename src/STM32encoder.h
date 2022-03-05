@@ -5,7 +5,6 @@
 #include "stm32yyxx_hal_conf.h"
 #include <cfloat>					// for float and double boundaries
 #include "stdint.h"					// for integers boundaries	
-#include <stdarg.h>					// for variadic function
 
 #define u8	uint8_t
 #define u16	uint16_t
@@ -16,12 +15,12 @@
 
 //#define ENC_DEBUG					// enable irqtime debug functions
 
-enum eTIMType {
-	TIM_MANAGED,
-	TIM_FREEWHEEL
+enum enc_mode_t {
+	ENC_MANAGED,
+	ENC_FREEWHEEL
 };
 
-enum _ebindType {
+enum enc_bind_t {
 	BIND_NONE,
 	BIND_INT8,
 	BIND_UINT8,
@@ -33,20 +32,20 @@ enum _ebindType {
 	BIND_DOUBLE
 };
 
-enum btnFunc_t {
-	TIM_BTNPOLL,
-	TIM_BTNSCALE
+enum btn_function_t {
+	BTN_POLL,
+	BTN_STEP
 };
 
-enum eTIMBtnFSM {
-	TIM_BTN_FSM_RESET,
-	TIM_BTN_FSM_PRESS1
+enum enc_fsm_t {
+	ENC_FSM_RESET,
+	ENC_FSM_PRESS1
 };
 
-enum _btnEvent {
-	TIM_BTN_EVT_NONE,
-	TIM_BTN_EVT_CLICK,
-	TIM_BTN_EVT_LONG
+enum enc_events_t {
+	BTN_EVT_NONE,
+	BTN_EVT_CLICK,
+	BTN_EVT_LONG
 };
 
 #define BTN_PRESS_TIME		2 	// millisecond debounce time
@@ -61,14 +60,14 @@ typedef struct {
 	volatile i16 	speed = 0;
 	volatile bool 	isUpdated = false;
 
-	eTIMType 		mode;
+	enc_mode_t 		mode;
 	bool			isStarted = false;
 
 	u16 			dynamic = 0;
 	u16 			stepLimit = 0;	
 	bool			dynamicPos = false;
 
-	_ebindType 		bindType = BIND_NONE;		// bind managementt
+	enc_bind_t 		bindType = BIND_NONE;		// bind managementt
 	void* 			bind = NULL;
 	i16				intBindSteps[5] 	= {1, 1, 1, 1, 1};			
 	float			floatBindSteps[5] 	= {1.0, 1.0, 1.0, 1.0, 1.0};
@@ -87,40 +86,40 @@ typedef struct {
 	bool			circular	= false;
 	void 			(*linked)(void) = NULL;	// attach management
 
-	u32				buttonPin = 0;
-	GPIO_TypeDef*	buttonPort = {0};
-	u16				buttonGpioPin = 0;
-	btnFunc_t 		buttonFunction = TIM_BTNPOLL;
+	u32						buttonPin = 0;
+	GPIO_TypeDef*			buttonPort = {0};
+	u16						buttonGpioPin = 0;
+	btn_function_t 			buttonFunction = BTN_POLL;
 	
-	volatile u32 	pressTime = 0;
-	volatile u32	depresTime = 0;
-	volatile eTIMBtnFSM		btnFSM = TIM_BTN_FSM_RESET;
-	volatile _btnEvent		btnEvt = TIM_BTN_EVT_NONE;
+	volatile u32 			pressTime = 0;
+	volatile u32			depresTime = 0;
+	volatile enc_fsm_t		btnFSM = ENC_FSM_RESET;
+	volatile enc_events_t	btnEvt = BTN_EVT_NONE;
 
 #ifdef ENC_DEBUG
 	volatile 			u32 irqtime =0;
 #endif
-} STM32statusType;
+} enc_status_t;
 
 
-#define ENCT_VERSION	903
+#define ENCT_VERSION	904
 
 class STM32encoder {
 	
 	public:
 	STM32encoder(TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = 3);
-	STM32encoder(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = UINT16_MAX);
+	STM32encoder(enc_mode_t _timMode, TIM_TypeDef *Instance, u8 _ICxFilter = 0, u16 _pulseTicks = UINT16_MAX);
 	//~STM32encoder();  // destructor
 	u32     	version();
 	
-	bool 		setButton(u32 _p, btnFunc_t _f = TIM_BTNPOLL
+	bool 		setButton(u32 _p, btn_function_t _f = BTN_POLL
 		, float _v0 =0.0
 		, float _v1 =0.0
 		, float _v2 =0.0
 		, float _v3 =0.0
 		, float _v4 =0.0
 	);																// set button pin, function and arguments
-	_btnEvent 	button(void);										// returns button last state and reset flag
+	enc_events_t 	button(void);										// returns button last state and reset flag
 	
 	u8			scaleId(void);										// returns current scale id
 	void 		scaleId(u8 _s);										// sets the current scale id
@@ -157,7 +156,7 @@ class STM32encoder {
 #endif
 
 	private:
-	STM32statusType st;
-	bool	init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks);
+	enc_status_t 	st;
+	bool			init(enc_mode_t _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks);
 };
 #endif

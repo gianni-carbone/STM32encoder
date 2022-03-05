@@ -10,7 +10,7 @@
 // takes aprox 	4uS with integers
 //  			10uS with floats and doubles
 
-void _timerIrq(STM32statusType* st){ 
+void _timerIrq(enc_status_t* st){ 
 
 #ifdef ENC_DEBUG	
 	st->irqtime = getCurrentMicros();
@@ -102,7 +102,7 @@ void _timerIrq(STM32statusType* st){
 	st->isUpdated = true;
 }
 
-void _buttonIrq(STM32statusType* st){ 
+void _buttonIrq(enc_status_t* st){ 
 	if (st->buttonPin == 0) return;
 	
 	u32  _newmillis = millis();
@@ -110,8 +110,8 @@ void _buttonIrq(STM32statusType* st){
 	if (!((st->buttonPort->IDR) & (st->buttonGpioPin))) {								// pressed. direct read IDR of buttonPort
 		
 		switch(st->btnFSM){
-			case TIM_BTN_FSM_RESET: 				
-				st->btnFSM = TIM_BTN_FSM_PRESS1;
+			case ENC_FSM_RESET: 				
+				st->btnFSM = ENC_FSM_PRESS1;
 			break;
 		}
 		st->pressTime = _newmillis;
@@ -119,21 +119,21 @@ void _buttonIrq(STM32statusType* st){
 	} else {																			// depressed
 		
 		switch(st->btnFSM){
-			case TIM_BTN_FSM_PRESS1:										
+			case ENC_FSM_PRESS1:										
 				if ((_newmillis - st->pressTime) > BTN_LONG_TIME) {
-					st->btnFSM = TIM_BTN_FSM_RESET;
-					st->btnEvt = TIM_BTN_EVT_LONG;
+					st->btnFSM = ENC_FSM_RESET;
+					st->btnEvt = BTN_EVT_LONG;
 				} else if ((_newmillis - st->pressTime) > BTN_PRESS_TIME) {
-					st->btnFSM = TIM_BTN_FSM_RESET;
-					st->btnEvt = TIM_BTN_EVT_CLICK;
-					if (st->buttonFunction == TIM_BTNSCALE) {							// special function
+					st->btnFSM = ENC_FSM_RESET;
+					st->btnEvt = BTN_EVT_CLICK;
+					if (st->buttonFunction == BTN_STEP) {							// special function
 						if (st->currentScale<(st->scaleSize-1)) 
 							st->currentScale++; 
 						else 
 							st->currentScale=0;
 					}
 				} else {
-					st->btnFSM = TIM_BTN_FSM_RESET;
+					st->btnFSM = ENC_FSM_RESET;
 				}
 			break;
 		}
@@ -143,14 +143,14 @@ void _buttonIrq(STM32statusType* st){
 	
 
 STM32encoder::STM32encoder(TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks){
-	st.isStarted = init(TIM_MANAGED, Instance, _ICxFilter, _pulseTicks);
+	st.isStarted = init(ENC_MANAGED, Instance, _ICxFilter, _pulseTicks);
 }  
 
-STM32encoder::STM32encoder(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks){
+STM32encoder::STM32encoder(enc_mode_t _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks){
 	st.isStarted = init(_timMode, Instance, _ICxFilter, _pulseTicks);
 }
 
-bool STM32encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks) {
+bool STM32encoder::init(enc_mode_t _timMode, TIM_TypeDef *Instance, u8 _ICxFilter, u16 _pulseTicks) {
 	if (!IS_TIM_IC_FILTER(_ICxFilter)) _ICxFilter = 0x00;							// check filter is valid
 
 	TIM_Encoder_InitTypeDef sConfig = {0};
@@ -175,7 +175,7 @@ bool STM32encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter,
 	
 	HAL_TIM_Encoder_MspInit(&st.htim);
 
-	if (_timMode == TIM_MANAGED) {
+	if (_timMode == ENC_MANAGED) {
 		// due to the HardwareTimer implementation in arduino, the HAL weak void isr is consumed so we have to use HardwareTimer instead
 		HardwareTimer *ht = new HardwareTimer(Instance);	// Instantiate HardwareTimer object. Thanks to 'new' instanciation, HardwareTimer is not destructed when function is finished.
 		ht->attachInterrupt(std::bind(_timerIrq, &st));		// we use std::bind to pass arguments
@@ -183,7 +183,7 @@ bool STM32encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter,
 		HardwareTimer *ht = new HardwareTimer(Instance);						// Instantiate HardwareTimer object. Thanks to 'new' instanciation, HardwareTimer is not destructed when function is finished.
 		ht->attachInterrupt(_timerIrq);
 */
-	} else if (_timMode == TIM_FREEWHEEL) {
+	} else if (_timMode == ENC_FREEWHEEL) {
 #ifdef TIM1
 		if (Instance == TIM1) __HAL_RCC_TIM1_CLK_ENABLE();
 #endif
@@ -236,10 +236,10 @@ bool STM32encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter,
 	if (HAL_TIMEx_MasterConfigSynchronization(&st.htim, &sMasterConfig) != HAL_OK)
 		return false;
 	
-	if (_timMode == TIM_MANAGED) {
+	if (_timMode == ENC_MANAGED) {
 		if(HAL_TIM_Encoder_Start_IT(&st.htim, TIM_CHANNEL_ALL)!=HAL_OK)			
 			return false;
-	} else if (_timMode == TIM_FREEWHEEL) {
+	} else if (_timMode == ENC_FREEWHEEL) {
 		if(HAL_TIM_Encoder_Start(&st.htim, TIM_CHANNEL_1)!=HAL_OK)			
 			return false;
 		__HAL_TIM_SET_COUNTER(&st.htim,0);
@@ -256,11 +256,11 @@ bool STM32encoder::init(eTIMType _timMode, TIM_TypeDef *Instance, u8 _ICxFilter,
 
 // main functions
 
-bool STM32encoder::setButton(u32 _p, btnFunc_t _f, float _v0, float _v1, float _v2, float _v3, float _v4) {
+bool STM32encoder::setButton(u32 _p, btn_function_t _f, float _v0, float _v1, float _v2, float _v3, float _v4) {
 	
 	if (!_p) return false;
 	
-	if (_f == TIM_BTNSCALE) {
+	if (_f == BTN_STEP) {
 		if (st.bindType == BIND_NONE) {
 			return false;
 		} else if (st.bindType == BIND_FLOAT) {
@@ -305,11 +305,11 @@ bool STM32encoder::setButton(u32 _p, btnFunc_t _f, float _v0, float _v1, float _
 	return true;
 }
 
-_btnEvent STM32encoder::button(void){
-	_btnEvent e = st.btnEvt;
-	if (e != TIM_BTN_EVT_NONE) {
-		st.btnFSM = TIM_BTN_FSM_RESET;
-		st.btnEvt = TIM_BTN_EVT_NONE;
+enc_events_t STM32encoder::button(void){
+	enc_events_t e = st.btnEvt;
+	if (e != BTN_EVT_NONE) {
+		st.btnFSM = ENC_FSM_RESET;
+		st.btnEvt = BTN_EVT_NONE;
 		st.pressTime = 0;
 		st.depresTime = 0;
 	}
@@ -347,17 +347,17 @@ bool STM32encoder::isUpdated(void) {
 }
 
 i32 STM32encoder::pos(void) {
-	if (st.mode == TIM_MANAGED) {
+	if (st.mode == ENC_MANAGED) {
 		return  st.pos;
-	} else if (st.mode == TIM_FREEWHEEL) {
+	} else if (st.mode == ENC_FREEWHEEL) {
 		return __HAL_TIM_GET_COUNTER(&st.htim);
 	} else return 0;
 }
 
 void STM32encoder::pos(i32 _p) {
-	if (st.mode == TIM_MANAGED) {
+	if (st.mode == ENC_MANAGED) {
 		st.pos = _p;
-	} else if (st.mode == TIM_FREEWHEEL) {
+	} else if (st.mode == ENC_FREEWHEEL) {
 		if (_p<0) 
 			_p=0;
 		else if (_p>UINT16_MAX)
@@ -367,9 +367,9 @@ void STM32encoder::pos(i32 _p) {
 }
 
 bool 	STM32encoder::dir() {
-	if (st.mode == TIM_MANAGED) {
+	if (st.mode == ENC_MANAGED) {
 		return !st.dir;
-	} else if (st.mode == TIM_FREEWHEEL) {
+	} else if (st.mode == ENC_FREEWHEEL) {
 		return !__HAL_TIM_IS_TIM_COUNTING_DOWN(&st.htim);
 	} else return true;
 }
@@ -390,20 +390,20 @@ void 	STM32encoder::dynamic(u16 _s, u16 _l, bool _dp) {
 u16 	STM32encoder::dynamic() {return st.dynamic;}
 
 void 	STM32encoder::circular(bool _c) {
-	if (st.mode != TIM_MANAGED) return; 
+	if (st.mode != ENC_MANAGED) return; 
 	st.circular = _c;
 }
 
 bool 	STM32encoder::circular(void) {
-	if (st.mode == TIM_MANAGED) {
+	if (st.mode == ENC_MANAGED) {
 		return st.circular;
-	} else if (st.mode == TIM_FREEWHEEL) {
+	} else if (st.mode == ENC_FREEWHEEL) {
 		return true;
 	} else return true;
 }
 
 void 	STM32encoder::attach(void (*_f)(void)) {
-	if (st.mode != TIM_MANAGED) return; 
+	if (st.mode != ENC_MANAGED) return; 
 	st.linked = _f;
 }
 
@@ -415,7 +415,7 @@ void STM32encoder::unbind() {
 }
 
 void STM32encoder::bind(i8* _p, i16 _s, i8 _min, i8 _max) {
-	if (st.mode != TIM_MANAGED) return;
+	if (st.mode != ENC_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_INT8;
 		st.bind = _p;
@@ -428,7 +428,7 @@ void STM32encoder::bind(i8* _p, i16 _s, i8 _min, i8 _max) {
 }
 
 void STM32encoder::bind(u8* _p, i16 _s, u8 _min, u8 _max) {
-	if (st.mode != TIM_MANAGED) return;
+	if (st.mode != ENC_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_UINT8;
 		st.bind = _p;
@@ -441,7 +441,7 @@ void STM32encoder::bind(u8* _p, i16 _s, u8 _min, u8 _max) {
 }
 
 void STM32encoder::bind(i16* _p, i16 _s, i16 _min, i16 _max) {
-	if (st.mode != TIM_MANAGED) return;
+	if (st.mode != ENC_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_INT16;
 		st.bind = _p;
@@ -454,7 +454,7 @@ void STM32encoder::bind(i16* _p, i16 _s, i16 _min, i16 _max) {
 }
 
 void STM32encoder::bind(u16* _p, i16 _s, u16 _min, u16 _max) {
-	if (st.mode != TIM_MANAGED) return;
+	if (st.mode != ENC_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_UINT16;
 		st.bind = _p;
@@ -467,7 +467,7 @@ void STM32encoder::bind(u16* _p, i16 _s, u16 _min, u16 _max) {
 }
 
 void STM32encoder::bind(i32* _p, i16 _s, i32 _min, i32 _max) {
-	if (st.mode != TIM_MANAGED) return;
+	if (st.mode != ENC_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_INT32;
 		st.bind = _p;
@@ -480,7 +480,7 @@ void STM32encoder::bind(i32* _p, i16 _s, i32 _min, i32 _max) {
 }
 
 void STM32encoder::bind(u32* _p, i16 _s, u32 _min, u32 _max) {
-	if (st.mode != TIM_MANAGED) return;
+	if (st.mode != ENC_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_UINT32;
 		st.bind = _p;
@@ -493,7 +493,7 @@ void STM32encoder::bind(u32* _p, i16 _s, u32 _min, u32 _max) {
 }
 
 void STM32encoder::bind(float_t* _p, float _s, float _min, float _max) {
-	if (st.mode != TIM_MANAGED) return;
+	if (st.mode != ENC_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_FLOAT;
 		st.bind = _p;
@@ -506,7 +506,7 @@ void STM32encoder::bind(float_t* _p, float _s, float _min, float _max) {
 }
 
 void STM32encoder::bind(double_t* _p, double _s, double _min, double _max) {
-	if (st.mode != TIM_MANAGED) return;
+	if (st.mode != ENC_MANAGED) return;
 	if (_p!=NULL) {
 		st.bindType = BIND_DOUBLE;
 		st.bind = _p;
