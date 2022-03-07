@@ -2,10 +2,10 @@
 
 [![GitHub release](https://img.shields.io/github/v/release/gianni-carbone/STM32encoder.svg)](https://github.com/gianni-carbone/STM32encoder/releases)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#Contributing)
+[![GitHub issues](https://img.shields.io/github/issues/gianni-carbone/STM32encoder.svg)](https://github.com/gianni-carbone/STM32encoder/issues)
 
-Arduino library to manage quadrature encoder for STM32 architecture. 
-
-This Arduino library simplifies the use of rotary encoders. It works with stm32 platforms.
+## Description
+Arduino library to manage quadrature encoder for STM32 architecture. This Arduino library simplifies the use of rotary encoders. It works with stm32 platforms.
 
 With a few lines of code it is possible to instantiate an encoder object by managing its properties and events. It is possible to link numeric variables to the encoder so that they are automatically increased and decreased by knob rotation. It is also possible to attach interrupt routines to be executed at each hardware device tick. The library also manages the rotation dynamics, calculating the rotation speed and possibly correcting the rate of increase and decrease based on rotation speed.
 
@@ -17,7 +17,7 @@ There is also a small set of functions for managing the knob button. Currently t
 
 Please take a look at the examples to get a better understanding of how it works.
 
-# Usage
+## Brief of methods and properties
 Available main methods in "managed" mode:
 - .pos()        read (or set) the hardware position counter. The position counter is a signed 32 bit counter.
 - .dir()        reads the last direction of rotation.
@@ -33,7 +33,7 @@ Available methods in "freewheel" mode:
 - .pos()        read (or set) the hardware position counter. The position counter, in this mode, is an unsigned 16 bit counter.
 - .dir()        reads the last direction of rotation.
 
-# Syntax
+## Syntax of methods and properties
 - **STM32Encoder(t, [f], [pt])**          Instantiate the encoder object by connecting it to the t (timer) , applying the digital filters f (uint8) and specifying the number of pulses per tick pt (uint16) that the encoder generates. The object is created in "Managed" mode. Standard encoders generate four pulses per tick, the default value for pt is therefore 4. The digital filter is a feature of the STM timers that allows you to reduce the glitches of mechanical devices at the expense of the maximum detectable speed. The allowed values range from 0 (no filters) to 0x7F, maximum filter value. The default value is 0 (no filters).
 - **STM32Encoder(m, t, [f], [pt])**       Instantiate the encoder object in mode m, by connecting it to the t (timer), applying the digital filters f (uint8) and specifying the number of pulses per tick pt (uint16) that the encoder generates. In this case it is possible to activate the object in FREEWHEEL mode, specifying m = ENC_FREEWHEEL. The freewheel encoder will have a very simplified behavior, as mentioned at the beginning of the document. By specifying m = ENC_MANAGED, the behavior will be exactly the same as the declaration mode mentioned above
 - **pos()**                               returns the counter (int32). The counter is an absolute counter that increase/decrease of 1 when dynamic counter is disabled (see below).
