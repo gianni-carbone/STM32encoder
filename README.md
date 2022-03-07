@@ -1,4 +1,8 @@
 # STM32encoder
+
+[![GitHub release](https://img.shields.io/github/v/release/gianni-carbone/STM32encoder.svg)](https://github.com/gianni-carbone/STM32encoder/releases)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#Contributing)
+
 Arduino library to manage quadrature encoder for STM32 architecture. 
 
 This Arduino library simplifies the use of rotary encoders. It works with stm32 platforms.
@@ -43,3 +47,13 @@ Available methods in "freewheel" mode:
 - **circular(m)**                         m (bool) sets the circular increment behavior of the linked variable. When m = true, the linked variable behave in circular mode. When m = true, the linked variable behaves in a circular way, that is, once it reaches an extreme fixed in the "bind" function, continuing to rotate the encoder, it will return to the other extreme. eg, assuming an integer bind with fixed extremes between 0 and 10, by rotating it towards the encoder, the variable will follow the following increment scheme 0,1,2 ..., 10,0, .... in case m = false, while continuing to rotate the encoder, the variable would have remained at 10. Warn: the counter is always circular, regardless of m
 - **setbutton(p,[f],[[r1,r2][..,r5]])**   Attach the button to pin p (pin), assigning it the function f (btn_function_t). If the assigned function is BTN_SCALE, then button click switches the scale of incremental values from r1 to r5 (you can specify minimum 2 values, maximum 5 in the setbutton call). In this case, the click of the button, in addition to generating the BTN_EVT_CLICK event, also changes the incRate on the linked variable. For example, the setButton(PA2, BTN_SCALE, 1, 10, 100), preceded by a bind call, sets a scale of increments of step value 1, 10, 100 per click (in a circular fashion). This means that by pressing the button connected to PA2, the rotation increasing passes from 1 to 10 and pressing again to 100. Useful if the variation is to operate on large intervals and you want to offer different increment values per detent, making them available with the pressing of the button knob.
 - **button()**                            read the button event (btnEvent) and resets button state.
+
+---
+
+### Contributing
+
+If you want to contribute to this project:
+- Report bugs and errors
+- Ask for enhancements
+- Create issues and pull requests
+- Tell other people about this library
