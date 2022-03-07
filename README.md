@@ -13,7 +13,7 @@ The library uses the "encoder mode" features of the advanced timers present in t
 
 The encoder object can be instantiated in "managed" or "freewheel" mode. In the first mode it is possible to exploit all the potential of the library. The second mode, while facilitating the use of the encoder and keeping low mcu overheads, leaves the user to manage the higher level functions. By default, object instantiation is in "managed" mode. 
 
-There is also a small set of functions for managing the knob button. Currently the library debounces the button and detects click and long click events. Alternatively, the knob button can be settled to vary the incRate on a predefined scale (eg 1, 10, 100) by calling the setButton function with the appropriate parameters (see syntax).
+There is also a small set of functions for managing the knob button. Currently the library debounces the button and detects click and long click events. Alternatively, the knob button can be settled to vary the incRate on a predefined scale (eg 1, 10, 100) presets it via the setButton function.
 
 Please take a look at the examples to get a better understanding of how it works.
 
