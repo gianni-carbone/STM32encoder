@@ -7,7 +7,7 @@
 ## Description
 Arduino library to manage quadrature encoder for STM32 architecture. This Arduino library simplifies the use of rotary encoders. It works with stm32 platforms.
 
-With a few lines of code it is possible to instantiate an encoder object by managing its properties and events. It is possible to link numeric variables to the encoder so that they are automatically increased and decreased by knob rotation. It is also possible to attach interrupt routines to be executed at each hardware device tick. The library also manages the rotation dynamics, calculating the rotation speed and possibly correcting the rate of increase and decrease based on rotation speed.
+With a few lines of code it is possible to instantiate an encoder object and managing its properties and events. It is possible to link numeric variables so that they are automatically increased and decreased by knob rotation. It is also possible to attach interrupt routines to be executed at each hardware device tick. The library also manages the rotation dynamics, calculating the rotation speed and possibly correcting the rate of increase and decrease based on rotation speed.
 
 The library uses the "encoder mode" features of the advanced timers present in the STM32 mcu. Each instantiated object uses (consumes) a timer. In general, each STM32 mcu has several timers available that offer the encoder mode, so it is possible to use multiple encoders connected to a single mcu. The maximum number of encoders depends on the mcu model.
 
