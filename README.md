@@ -5,7 +5,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/gianni-carbone/STM32encoder.svg)](https://github.com/gianni-carbone/STM32encoder/issues)
 
 ## Description
-Arduino library to manage quadrature encoder for STM32 architecture. This Arduino library simplifies the use of rotary encoders. It works with stm32 platforms.
+Arduino library for the management of rotary encoders with STM32. This Arduino library simplifies the use of rotary encoders. It works with stm32 platforms.
 
 With a few lines of code it is possible to instantiate an encoder object and managing its properties and events. It is possible to link numeric variables so that they are automatically increased and decreased by knob rotation. It is also possible to attach interrupt routines to be executed at each hardware device tick. The library also manages the rotation dynamics, calculating the rotation speed and possibly correcting the rate of increase and decrease based on rotation speed.
 
