@@ -1,7 +1,3 @@
-#ifndef ARDUINO_ARCH_STM32
-#error this library works with STM32 architecture only
-#endif
-
 #ifndef STM32encoder_h
 #define STM32encoder_h
 
@@ -88,12 +84,13 @@ typedef struct {
 	double			doubleMin = 0;
 	double			doubleMax = 0;
 	bool			circular	= false;
-	void 			(*linked)(void) = NULL;	// attach management
+	void 			(*tickFuncPtr)(void) = NULL;	// attach management
 
 	u32						buttonPin = 0;
-	GPIO_TypeDef*			buttonPort = {0};
+	GPIO_TypeDef*			buttonGpioPort = {0};
 	u16						buttonGpioPin = 0;
 	btn_function_t 			buttonFunction = BTN_POLL;
+	void 					(*buttonFuncPtr)(void) = NULL;	// attach management
 	
 	volatile u32 			pressTime = 0;
 	volatile u32			depresTime = 0;
@@ -106,7 +103,7 @@ typedef struct {
 } enc_status_t;
 
 
-#define ENCT_VERSION	904
+#define ENCT_VERSION	905
 
 class STM32encoder {
 	
@@ -123,8 +120,8 @@ class STM32encoder {
 		, float _v3 =0.0
 		, float _v4 =0.0
 	);																// set button pin, function and arguments
-	enc_events_t 	button(void);										// returns button last state and reset flag
-	
+	enc_events_t 	button(void);									// returns button last state and reset flag
+	bool 			attachButton(void (*_f)(void));					// attach the given function to the button isr (The function will be executed at the end of interrupt routine)
 	u8			scaleId(void);										// returns current scale id
 	void 		scaleId(u8 _s);										// sets the current scale id
 	u8			scaleSize(void);									// returns current scale size
@@ -142,7 +139,7 @@ class STM32encoder {
 	u16 		dynamic(void);										// get the speed factor
 	u16 		speedLimit();										// get the speed limit	
 
-	void 		attach(void (*_f)(void));							// attach the given function to the isr (The function will be executed at the end of interrupt routine)
+	void 		attach(void (*_f)(void));							// attach the given function to the tick isr (The function will be executed at the end of interrupt routine)
 	void 		detach(void);										// detach the function
 	
 	void 		bind(i8* _p, i16 _s = 1, i8 _min = INT8_MIN, i8 _max = INT8_MAX);			// binds the given variable to the isr (variable management). The variable will be incremented or decremented in the isr routine by _s steps per tick. Affected by dynamic.

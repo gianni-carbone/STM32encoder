@@ -93,7 +93,7 @@ void _timerIrq(enc_status_t* st){
 		}
 	}
 	
-	if (st->linked!=NULL) st->linked();
+	if (st->tickFuncPtr!=NULL) st->tickFuncPtr();										// execute user attached function if any
 	
 	st->oldmillis = _newmillis;
 #ifdef ENC_DEBUG	
@@ -107,7 +107,7 @@ void _buttonIrq(enc_status_t* st){
 	
 	u32  _newmillis = millis();
 	
-	if (!((st->buttonPort->IDR) & (st->buttonGpioPin))) {								// pressed. direct read IDR of buttonPort
+	if (!((st->buttonGpioPort->IDR) & (st->buttonGpioPin))) {							// pressed. direct read IDR of buttonGpioPort
 		
 		switch(st->btnFSM){
 			case ENC_FSM_RESET: 				
@@ -126,12 +126,13 @@ void _buttonIrq(enc_status_t* st){
 				} else if ((_newmillis - st->pressTime) > BTN_PRESS_TIME) {
 					st->btnFSM = ENC_FSM_RESET;
 					st->btnEvt = BTN_EVT_CLICK;
-					if (st->buttonFunction == BTN_STEP) {							// special function
+					if (st->buttonFunction == BTN_STEP) {								// special function
 						if (st->currentScale<(st->scaleSize-1)) 
 							st->currentScale++; 
 						else 
 							st->currentScale=0;
 					}
+					if (st->buttonFuncPtr!=NULL) st->buttonFuncPtr();					// execute user attached function if any
 				} else {
 					st->btnFSM = ENC_FSM_RESET;
 				}
@@ -297,7 +298,7 @@ bool STM32encoder::setButton(u32 _p, btn_function_t _f, float _v0, float _v1, fl
 	pinMode(st.buttonPin, INPUT_PULLUP);
 	
 	PinName pn = digitalPinToPinName(st.buttonPin);
-	st.buttonPort = get_GPIO_Port(STM_PORT(pn));
+	st.buttonGpioPort = get_GPIO_Port(STM_PORT(pn));
 	st.buttonGpioPin = STM_GPIO_PIN(pn);
 	attachInterrupt(st.buttonPin, std::bind(_buttonIrq, &st), CHANGE);
 	st.buttonFunction = _f;
@@ -327,9 +328,14 @@ void STM32encoder::scaleId(u8 _s){
 		st.currentScale = st.scaleSize-1;
 }
 
-
 u8	STM32encoder::scaleSize(void){
 	return st.scaleSize;
+}
+
+bool	STM32encoder::attachButton(void (*_f)(void)) {
+	if (st.buttonPin == 0) return false;
+	st.buttonFuncPtr = _f;
+	return true;
 }
 
 u32	STM32encoder::version(void) {
@@ -404,10 +410,10 @@ bool 	STM32encoder::circular(void) {
 
 void 	STM32encoder::attach(void (*_f)(void)) {
 	if (st.mode != ENC_MANAGED) return; 
-	st.linked = _f;
+	st.tickFuncPtr = _f;
 }
 
-void 	STM32encoder::detach(void) {st.linked = NULL;}
+void 	STM32encoder::detach(void) {st.tickFuncPtr = NULL;}
 	
 void STM32encoder::unbind() {	
 	st.bindType = BIND_NONE;
