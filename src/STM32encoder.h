@@ -1,3 +1,7 @@
+#ifndef ARDUINO_ARCH_STM32
+#error this library works with STM32 architecture only
+#endif
+
 #ifndef STM32encoder_h
 #define STM32encoder_h
 
