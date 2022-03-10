@@ -103,7 +103,7 @@ typedef struct {
 } enc_status_t;
 
 
-#define ENCT_VERSION	906
+#define ENCT_VERSION	907
 
 class STM32encoder {
 	
