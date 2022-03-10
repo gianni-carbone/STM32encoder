@@ -45,14 +45,16 @@ void _timerIrq(enc_status_t* st){
 		float _floatSteps;
 		double _doubleSteps;
 		
-		if (st->bindType == BIND_FLOAT) 
+		if (st->bindType == BIND_FLOAT) 											
 			_floatSteps = ((float)_steps * st->floatBindSteps[st->currentScale]);
 		else if (st->bindType == BIND_DOUBLE) 
 			_doubleSteps = ((double)_steps * st->doubleBindSteps[st->currentScale]);
-		else
+		else if (st->bindType != BIND_NONE) 
 			_intSteps = ((i32)_steps * (i32)st->intBindSteps[st->currentScale]);
 		
 		switch(st->bindType) {
+			case BIND_NONE: break;
+			
 			case BIND_INT8: 
 				TRIM_INT8(_intSteps);
 				DO_STEP(*(i8*)st->bind, _intSteps, st->intMin, st->intMax)
@@ -156,7 +158,6 @@ bool STM32encoder::init(enc_mode_t _timMode, TIM_TypeDef *Instance, u8 _ICxFilte
 
 	TIM_Encoder_InitTypeDef sConfig = {0};
 	TIM_MasterConfigTypeDef sMasterConfig = {0};
-
 	
 	st.htim.Instance = Instance;
 	st.htim.Init.Prescaler = 0;
@@ -180,10 +181,6 @@ bool STM32encoder::init(enc_mode_t _timMode, TIM_TypeDef *Instance, u8 _ICxFilte
 		// due to the HardwareTimer implementation in arduino, the HAL weak void isr is consumed so we have to use HardwareTimer instead
 		HardwareTimer *ht = new HardwareTimer(Instance);	// Instantiate HardwareTimer object. Thanks to 'new' instanciation, HardwareTimer is not destructed when function is finished.
 		ht->attachInterrupt(std::bind(_timerIrq, &st));		// we use std::bind to pass arguments
-/*		
-		HardwareTimer *ht = new HardwareTimer(Instance);						// Instantiate HardwareTimer object. Thanks to 'new' instanciation, HardwareTimer is not destructed when function is finished.
-		ht->attachInterrupt(_timerIrq);
-*/
 	} else if (_timMode == ENC_FREEWHEEL) {
 #ifdef TIM1
 		if (Instance == TIM1) __HAL_RCC_TIM1_CLK_ENABLE();
